@@ -7,6 +7,20 @@ This practical sets up a local multi-node Kubernetes cluster using `kind` and us
 
 ---
 
+## 1.2. Architecture
+
+The diagram below shows the high-level architecture of the practical: a host machine issuing commands into a 3-node `kind` cluster, a control-plane node that schedules workloads, two services routing traffic in different ways, and two worker nodes each running application pods.
+
+![Practical 1 high-level architecture](image/architecture-overview.png)
+
+- **Host machine :** runs `kubectl`, `curl`, and `docker` outside the cluster to manage it and test connectivity.
+- **Control-plane node :** runs the API server, scheduler, and etcd; every `kubectl` command and all pod scheduling decisions go through here.
+- **ClusterIP service :** routes traffic internally within the cluster only, using DNS and load balancing across matching pods.
+- **NodePort service :** does the same routing internally, but also exposes port `30080` so the host machine can reach the pods directly.
+- **Worker nodes :** where the actual application pods run; the scheduler distributes pods across both workers rather than putting them all on one.
+
+---
+
 ## 2. Cluster Provisioning
 
 The cluster was created with one control-plane node and two worker nodes, using a custom pod subnet, service subnet, and a NodePort mapping for later use. All three nodes came up `Ready` and were labeled correctly (`worker-node-1`, `worker-node-2`).
@@ -39,7 +53,7 @@ A pod created with no resource fields automatically received the LimitRange defa
 
 ---
 
-## 4. Pods — Imperative vs Declarative
+## 4. Pods Imperative vs Declarative
 
 A pod was first created imperatively (`kubectl run`) to see how much Kubernetes fills in automatically (status, node assignment, tolerations, resources). The same pod was then defined declaratively in `manifests/02-pod-web.yaml` and applied. Re-applying the same file a second time reported `unchanged`, showing that declarative management is idempotent — it only makes changes when something actually differs.
 
@@ -59,7 +73,7 @@ Port-forwarding the pod to the host and curling it confirmed the app is reachabl
 
 ---
 
-## 5. Deployments — Self-Healing and Scaling
+## 5. Deployments Self-Healing and Scaling
 
 A `Deployment` was applied with 3 replicas, which created a ReplicaSet that in turn created and manages the 3 pods.
 
@@ -92,7 +106,7 @@ After `rollout undo`, the deployment is back to `3/3` running the correct image.
 
 ---
 
-## 7. Services — Discovery and Load Balancing
+## 7. Services Discovery and Load Balancing
 
 A `ClusterIP` Service (`web-clusterip`) was created in front of the 3 deployment pods plus the standalone `web-pod`. A separate `client-pod` (busybox) was used to test it from inside the cluster.
 
