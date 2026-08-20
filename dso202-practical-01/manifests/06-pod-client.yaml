@@ -1,0 +1,29 @@
+# =============================================================================
+# File        : manifests/06-pod-client.yaml
+# Apply with  : kubectl apply -f manifests/06-pod-client.yaml
+# =============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client-pod
+  namespace: dso202-practical-01
+  labels:
+    app: client
+    tier: tooling
+    dso202/practical: "01"
+    dso202/managed-by: declarative
+spec:
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 5
+  containers:
+    - name: client
+      image: busybox:1.37
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/sh", "-c", "sleep infinity"]
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 100m
+          memory: 64Mi

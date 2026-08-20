@@ -1,0 +1,17 @@
+# =============================================================================
+# File        : manifests/00-namespace.yaml
+# Practical   : DSO202 Practical 1
+# Apply with  : kubectl apply -f manifests/00-namespace.yaml
+# Prefix 00-  : applied first; every later object depends on it existing.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dso202-practical-01
+  labels:
+    dso202/practical: "01"
+    dso202/managed-by: declarative
+  annotations:
+    dso202.cst.edu.bt/description: "Namespace for DSO202 Practical 1 workloads"
+    dso202.cst.edu.bt/owner: "02230291"
+    dso202.cst.edu.bt/date: "2026-08-19"

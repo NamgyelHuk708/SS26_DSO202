@@ -1,0 +1,36 @@
+# =============================================================================
+# File        : manifests/02-pod-web.yaml
+# Practical   : DSO202 Practical 1
+# Inspect with: kubectl get pod web-pod -o wide --show-labels
+# Delete with : kubectl delete -f manifests/02-pod-web.yaml
+# =============================================================================
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pod
+  namespace: dso202-practical-01
+  labels:
+    app: web
+    tier: frontend
+    dso202/practical: "01"
+    dso202/managed-by: declarative
+  annotations:
+    dso202.rub.edu.bt/description: "Single-container Pod for DSO202 Practical 1 Stage 4"
+spec:
+  restartPolicy: Always
+  terminationGracePeriodSeconds: 30
+  containers:
+    - name: web
+      image: nginx:1.30-alpine
+      imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi

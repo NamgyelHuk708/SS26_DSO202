@@ -1,0 +1,20 @@
+LAST SEEN   TYPE      REASON              OBJECT                                 MESSAGE
+53m         Normal    Created             pod/web-deployment-ddd46bfd-mjfnj      Container created
+53m         Normal    Killing             pod/web-deployment-ddd46bfd-mjfnj      Stopping container web
+53m         Normal    Started             pod/web-deployment-ddd46bfd-mjfnj      Container started
+53m         Normal    Pulled              pod/web-deployment-ddd46bfd-mjfnj      Successfully pulled image "nginx:1.31-alpine" in 15m58.493s (15m58.493s including waiting). Image size: 26079904 bytes.
+34m         Normal    SuccessfulCreate    replicaset/web-deployment-67499b7844   Created pod: web-deployment-67499b7844-pwdrh
+34m         Normal    ScalingReplicaSet   deployment/web-deployment              Scaled up replica set web-deployment-67499b7844 from 0 to 1
+34m         Normal    Scheduled           pod/web-deployment-67499b7844-pwdrh    Successfully assigned dso202-practical-01/web-deployment-67499b7844-pwdrh to worker-node-2
+31m         Normal    Pulling             pod/web-deployment-67499b7844-pwdrh    Pulling image "nginx:9.99-does-not-exist"
+31m         Warning   Failed              pod/web-deployment-67499b7844-pwdrh    Error: ErrImagePull
+31m         Warning   Failed              pod/web-deployment-67499b7844-pwdrh    Failed to pull image "nginx:9.99-does-not-exist": rpc error: code = NotFound desc = failed to pull and unpack image "docker.io/library/nginx:9.99-does-not-exist": failed to resolve reference "docker.io/library/nginx:9.99-does-not-exist": docker.io/library/nginx:9.99-does-not-exist: not found
+24m         Normal    BackOff             pod/web-deployment-67499b7844-pwdrh    Back-off pulling image "nginx:9.99-does-not-exist"
+24m         Warning   Failed              pod/web-deployment-67499b7844-pwdrh    Error: ImagePullBackOff
+20m         Normal    ScalingReplicaSet   deployment/web-deployment              Scaled down replica set web-deployment-67499b7844 from 1 to 0
+20m         Normal    SuccessfulDelete    replicaset/web-deployment-67499b7844   Deleted pod: web-deployment-67499b7844-pwdrh
+15m         Normal    Scheduled           pod/client-pod                         Successfully assigned dso202-practical-01/client-pod to worker-node-2
+15m         Normal    Pulling             pod/client-pod                         Pulling image "busybox:1.37"
+15m         Normal    Started             pod/client-pod                         Container started
+15m         Normal    Created             pod/client-pod                         Container created
+15m         Normal    Pulled              pod/client-pod                         Successfully pulled image "busybox:1.37" in 19.616s (19.616s including waiting). Image size: 2222111 bytes.

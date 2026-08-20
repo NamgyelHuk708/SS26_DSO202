@@ -1,0 +1,54 @@
+# =============================================================================
+# File        : manifests/03-deployment-web.yaml
+# Apply with  : kubectl apply -f manifests/03-deployment-web.yaml
+# Watch with  : kubectl rollout status deployment/web-deployment
+# Update with : kubectl set image deployment/web-deployment web=nginx:1.31-alpine
+# Undo with   : kubectl rollout undo deployment/web-deployment
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-deployment
+  namespace: dso202-practical-01
+  labels:
+    app: web
+    tier: frontend
+    dso202/practical: "01"
+    dso202/managed-by: declarative
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+      tier: frontend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  minReadySeconds: 5
+  revisionHistoryLimit: 5
+  progressDeadlineSeconds: 300
+  template:
+    metadata:
+      labels:
+        app: web
+        tier: frontend
+        dso202/practical: "01"
+        dso202/managed-by: declarative
+    spec:
+      containers:
+        - name: web
+          image: nginx:1.30-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
