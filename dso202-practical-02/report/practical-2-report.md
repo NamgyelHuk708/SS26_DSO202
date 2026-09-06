@@ -221,15 +221,29 @@ Both had a reclaim policy of Retain, so once their claims were deleted, Kubernet
 
 ## 5. Reflection
 
-The trickiest part of this practical was not the Kubernetes concepts, but getting the local setup to cooperate with them. Right at Stage 1, cluster creation failed with a Docker error saying the mount path was not shared, since Docker Desktop only allows bind mounts from paths it already knows about, and /tmp was not one of them. The fix was moving the host storage folder into the home directory instead, which Docker Desktop shares by default, and updating the hostPath value in the cluster config to match. This felt like the better option compared to changing Docker Desktop's file sharing settings, since a fix inside the repository's own config still works the same way on a different machine, while a manual settings change would not.
+The very first real problem came before the cluster had even finished creating. Running `kind create cluster --config cluster/kind-cluster.yaml` failed partway through, with Docker refusing to mount the storage folder.
 
-Another issue came up in Stage 6, while trying to capture the pod termination order during a scale down. The first two attempts missed it, because the watch command was only started after the scale down had already finished, so there was nothing left to catch. Kubectl's watch flag only streams events from the moment it starts. The fix was scaling back up to four replicas, starting the watch command first, and only then triggering the scale down from a separate terminal, which finally caught the pods terminating in the correct order.
+![Docker mount denied error](../evidence/error.png)
 
-A smaller issue also came up with kubectl wait right after a scale up, where it reported the pod as not found. This happened because the wait command ran before the API server had actually finished creating the pod object. Running the wait command again straight after fixed it.
+The message came from Docker, not from kind: `The path /tmp/dso202-p2-storage is not shared from the host and is not known to Docker.` Turns out Docker Desktop only allows bind mounts from folders it already knows it can share, and /tmp was not one of them. Instead of changing Docker Desktop's settings through its menus, the fix went into the project itself, moving the storage folder into the home directory and updating the hostPath line in cluster/kind-cluster.yaml to match, so the setup still works the same way on any machine.
 
-If this practical were repeated, checking Docker Desktop's shared folder settings before starting would save some time. One thing that is still not fully clear is how much delay is normal between a kubectl command being accepted and the resulting object actually showing up, since that gap is what caused the wait command to fail early.
+![Fix applied and cluster creating successfully](../evidence/solution.png)
 
----
+A smaller timing issue turned up again in Stage 6, while trying to catch the pod termination order during the scale down in Step 6.2. The first attempt missed it, since `kubectl get pods -w` only got started after the scale down had already finished. Starting the watch command first, then triggering the scale down from a separate terminal, finally caught the pods terminating in the correct order. A related issue happened just before that, where `kubectl wait --for=condition=Ready pod/webnote-3` returned "pod not found" because the pod had not actually been created yet at the exact moment the command ran, and running it again straight after fixed it.
+
+Looking back, this practical is really teaching two separate lessons, not one. The first is that a PersistentVolume object is only ever a description of storage, never the storage itself. That point came through clearly while fixing the Docker error above, since the volume was always meant to live on the host machine, and it got proven directly in Step 2.6, where deleting the PersistentVolume object with `kubectl delete pv` left the actual file on disk untouched, and again in Step 8.7, where the same file survived even after the entire cluster was deleted.
+
+![File still present after deleting the PV object](../evidence/step2.6.png)
+
+The second lesson is about identity, not just data. Stage 4 made it obvious what happens when a Deployment gets used for something that needs its own storage, all three replicas were forced onto one node, ended up sharing one file instead of having three, and lost their names completely once restarted.
+
+![All three replicas sharing one node and one file](../evidence/step4.1.png)
+
+Stage 5 showed the fix for that, a StatefulSet gives each replica its own volume, its own stable name, and its own DNS address that survives a restart, and that is exactly what Step 5.7 and the PostgreSQL test in Step 7.6 both confirmed, the data and the identity both came back correctly after the pod was deleted.
+
+![Row count still correct after the pod was deleted](../evidence/step7.6.png)
+
+Put together, the whole practical comes down to matching the right tool to the right kind of problem, Deployments for stateless replicas that do not care about identity, and StatefulSets paired with the correct reclaim policy for anything that owns data and needs to keep the same identity across restarts.
 
 ## 6. References
 
