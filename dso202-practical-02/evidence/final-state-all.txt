@@ -1,0 +1,16 @@
+NAME                READY   STATUS    RESTARTS   AGE     IP            NODE            NOMINATED NODE   READINESS GATES
+pod/client          1/1     Running   0          34m     10.244.2.17   worker-node-2   <none>           <none>
+pod/postgres-0      1/1     Running   0          2m12s   10.244.1.14   worker-node-1   <none>           <none>
+pod/static-writer   1/1     Running   0          52m     10.244.1.4    worker-node-1   <none>           <none>
+pod/webnote-0       1/1     Running   0          12m     10.244.2.21   worker-node-2   <none>           <none>
+pod/webnote-1       1/1     Running   0          12m     10.244.1.11   worker-node-1   <none>           <none>
+pod/webnote-2       1/1     Running   0          12m     10.244.2.22   worker-node-2   <none>           <none>
+
+NAME                        TYPE        CLUSTER-IP    EXTERNAL-IP   PORT(S)    AGE     SELECTOR
+service/postgres            ClusterIP   10.96.3.107   <none>        5432/TCP   8m49s   app=postgres
+service/postgres-headless   ClusterIP   None          <none>        5432/TCP   8m49s   app=postgres
+service/webnote             ClusterIP   None          <none>        80/TCP     42m     app=webnote
+
+NAME                        READY   AGE     CONTAINERS   IMAGES
+statefulset.apps/postgres   1/1     8m10s   postgres     postgres:18-alpine
+statefulset.apps/webnote    3/3     12m     nginx        nginx:1.31-alpine
