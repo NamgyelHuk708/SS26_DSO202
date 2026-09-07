@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: db-pvc
+  namespace: dso202-assignment-01
+  labels:
+    app: database
+    tier: database
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

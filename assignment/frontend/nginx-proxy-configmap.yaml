@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-nginx-conf
+  namespace: dso202-assignment-01
+  labels:
+    app: frontend
+    tier: frontend
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+data:
+  nginx.conf: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+    events {
+      worker_connections 1024;
+    }
+    http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+      client_body_temp_path /tmp/client_temp;
+      proxy_temp_path       /tmp/proxy_temp;
+      fastcgi_temp_path     /tmp/fastcgi_temp;
+      uwsgi_temp_path       /tmp/uwsgi_temp;
+      scgi_temp_path        /tmp/scgi_temp;
+      sendfile on;
+      keepalive_timeout 65;
+      server {
+        listen 8080;
+        server_name _;
+        root /usr/share/nginx/html;
+        index index.html;
+        location = /config.js {
+          add_header Cache-Control "no-store";
+        }
+        location /api/ {
+          proxy_pass http://backend-svc:8080/api/;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+        }
+        location / {
+          try_files $uri $uri/ /index.html;
+        }
+      }
+    }
+  docker-entrypoint.sh: |
+    #!/bin/sh
+    set -eu
+    # Preserve an intentionally-empty BACKEND_URL (relative-path mode, used
+    # with the nginx /api/ reverse proxy) instead of the image's original
+    # default of http://localhost:8080, which would otherwise collide with
+    # unrelated services on the host's port 8080.
+    BACKEND_URL="${BACKEND_URL-}"
+    envsubst '${BACKEND_URL}' \
+      < /usr/share/nginx/html/config.js.template \
+      > /usr/share/nginx/html/config.js
+    exec nginx -g 'daemon off;'

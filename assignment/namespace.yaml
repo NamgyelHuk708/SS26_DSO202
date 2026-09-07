@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dso202-assignment-01
+  labels:
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+  annotations:
+    dso202.rub.edu.bt/description: "Namespace for DSO202 Assignment 1 - three-tier task tracker"
+    dso202.rub.edu.bt/owner: "Namgyel Wangchuk"

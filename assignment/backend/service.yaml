@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+  namespace: dso202-assignment-01
+  labels:
+    app: backend
+    tier: backend
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  type: ClusterIP
+  selector:
+    app: backend
+    tier: backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP

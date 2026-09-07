@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: dso202-assignment-01
+  labels:
+    app: backend
+    tier: backend
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: backend
+        dso202/assignment: "01"
+        dso202/managed-by: declarative
+    spec:
+      containers:
+        - name: backend
+          image: sarojsanyasi/dso202-backend:1.0
+          # NOTE: see README "Known Issue - Image Architecture". Image is
+          # pre-loaded via `kind load docker-image`, not pulled from Docker
+          # Hub. Revert to "IfNotPresent" once a fixed image is published.
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi

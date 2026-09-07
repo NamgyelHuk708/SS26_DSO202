@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: dso202-assignment-01
+  labels:
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+data:
+  DB_HOST: "db-svc"
+  DB_PORT: "5432"
+  DB_NAME: "tasksdb"
+  APP_PORT: "8080"
+  CORS_ORIGIN: "*"
+  POSTGRES_DB: "tasksdb"
+  BACKEND_URL: ""

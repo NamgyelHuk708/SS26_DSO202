@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: assignment-01-quota
+  namespace: dso202-assignment-01
+  labels:
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    pods: "10"
+    count/services: "5"
+    count/configmaps: "10"
+    count/secrets: "10"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: assignment-01-limits
+  namespace: dso202-assignment-01
+  labels:
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 200m
+        memory: 128Mi
+      defaultRequest:
+        cpu: 50m
+        memory: 64Mi
+      min:
+        cpu: 10m
+        memory: 16Mi
+      max:
+        cpu: "1"
+        memory: 512Mi

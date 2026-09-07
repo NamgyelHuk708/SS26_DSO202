@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: database
+  namespace: dso202-assignment-01
+  labels:
+    app: database
+    tier: database
+    dso202/assignment: "01"
+    dso202/managed-by: declarative
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: database
+        tier: database
+        dso202/assignment: "01"
+        dso202/managed-by: declarative
+    spec:
+      containers:
+        - name: database
+          image: sarojsanyasi/dso202-db:1.0
+          # NOTE: imagePullPolicy is "Never" because of the arm64-only image
+          # workaround documented above (Section 3A) — the image is
+          # pre-loaded into every kind node via `kind load docker-image`,
+          # not pulled from Docker Hub. Revert to "IfNotPresent" once the
+          # tutor publishes a corrected amd64/multi-arch image.
+          imagePullPolicy: Never
+          ports:
+            - name: postgres
+              containerPort: 5432
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          volumeMounts:
+            - name: db-storage
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: db-storage
+          persistentVolumeClaim:
+            claimName: db-pvc
