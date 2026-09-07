@@ -48,19 +48,20 @@ Context set to use this namespace by default:
 
 ![context namespace](evidence/task1-03-context-namespace.png)
 
-### Architecture Note
-
-This assignment deploys a three tier Task Tracker into the namespace `dso202-assignment-01`, on top of the existing three node kind cluster (`dso202`) built in Practical 1.
-
-**Database tier.** A single replica Deployment runs the provided Postgres based image `sarojsanyasi/dso202-db`. When this Deployment is applied, kube-apiserver stores the request, kube-scheduler picks one of the two worker nodes to place the Pod on, and kubelet on that node pulls the image and starts the container. The database's data folder is backed by a PersistentVolumeClaim so the data survives even if the Pod is deleted and recreated. This tier is exposed only through a headless Service (`clusterIP: None`), since there is only ever one database instance running and the backend should connect straight to that one Pod's address instead of going through a load balanced virtual IP.
-
-**Backend tier.** A Deployment runs the provided image `sarojsanyasi/dso202-backend`. It reads its database connection details from the ConfigMap and Secret created in Task 2. It is exposed with a ClusterIP Service, which means it can be reached by name from other Pods in the namespace but is never reachable from outside the cluster, which matches the assignment's requirement.
-
-**Frontend tier.** A Deployment runs the provided image `sarojsanyasi/dso202-frontend`. It reads the backend's address from the ConfigMap. It is exposed through a NodePort Service, using the port already mapped in the kind cluster config from Practical 1, so the page can be opened directly in a browser at `http://localhost:30080`.
-
-**Control plane role, common to all three tiers.** kube-apiserver validates and stores every manifest applied. kube-scheduler decides which node each Pod lands on, working within the limits set later by the ResourceQuota in Task 6. kubelet on the chosen node pulls the image and keeps the container running. kube-proxy on every node sets up the rules that let a Service route traffic to the right Pod no matter which node that Pod is actually running on.
-
+### Architecture Note (revised)
+ 
+This assignment deploys a three tier Task Tracker into the namespace `dso202-assignment-01`, on top of the existing three node kind cluster (`dso202`) built in Practical 1. Working through this task by task made it much clearer how the different Kubernetes objects actually map onto real application tiers, rather than just being separate topics from the lecture.
+ 
+**Database tier.** A single replica Deployment runs the provided Postgres based image `sarojsanyasi/dso202-db`. When this Deployment is applied, kube-apiserver stores the request, kube-scheduler picks one of the two worker nodes to place the Pod on, and kubelet on that node pulls the image and starts the container. The database's data folder is backed by a PersistentVolumeClaim so the data survives even if the Pod is deleted and recreated, which is something that became very obvious later in Task 7c when the backend Pod was deleted and the task data was still there afterward. This tier is exposed only through a headless Service (`clusterIP: None`), since there is only ever one database instance running and the backend should connect straight to that one Pod's address instead of going through a load balanced virtual IP. This made more sense after seeing that a normal ClusterIP Service would load balance between replicas, which does not really apply here since there is only ever one database Pod.
+ 
+**Backend tier.** A Deployment runs the provided image `sarojsanyasi/dso202-backend`. It reads its database connection details from the ConfigMap and Secret created in Task 2. It is exposed with a ClusterIP Service, which means it can be reached by name from other Pods in the namespace but is never reachable from outside the cluster, matching the assignment's requirement that the backend should never be exposed directly. Seeing this constraint in practice, rather than just reading it in the brief, made the difference between ClusterIP and NodePort feel a lot more concrete than it did in Practical 1.
+ 
+**Frontend tier.** A Deployment runs the provided image `sarojsanyasi/dso202-frontend`. It reads the backend's address from the ConfigMap. It is exposed through a NodePort Service, using the port already mapped in the kind cluster config from Practical 1, so the page can be opened directly in a browser at `http://localhost:30080`. This is the only tier allowed to be reached from outside the cluster, which lines up with it being the only tier a real user is ever supposed to interact with directly.
+ 
+**Control plane role, common to all three tiers.** kube-apiserver validates and stores every manifest applied. kube-scheduler decides which node each Pod lands on, working within the limits set later by the ResourceQuota in Task 6. kubelet on the chosen node pulls the image and keeps the container running. kube-proxy on every node sets up the rules that let a Service route traffic to the right Pod no matter which node that Pod is actually running on. Thinking through this before writing any manifest, as the assignment asked, made the later tasks feel less like copying a pattern from Practical 1 and more like actually deciding which object fits which job.
+ 
 ---
+
 
 ## Task 2: Configuration and Secrets
 
@@ -322,7 +323,7 @@ The imperative command actually run, then cleaned up straight after:
 
 ---
 
-## Task 8 (Bonus): Namespace RBAC
+## Task 8 : Namespace RBAC
 
 A ServiceAccount (`readonly-viewer`), a Role (`namespace-viewer`), and a RoleBinding (`readonly-viewer-binding`) were added, all scoped to `dso202-assignment-01` only. The Role only grants `get`, `list`, and `watch` on Pods, Services, ConfigMaps, Secrets, PersistentVolumeClaims, Deployments, and ReplicaSets. No write permissions such as `create`, `update`, or `delete` are given.
 
@@ -354,6 +355,16 @@ Looking back, one thing that would help next time is checking the image architec
 
 ## References
 
-- DSO202 Practical 1 guide and companion manifest file (module material)
-- DSO202 Assignment 1 brief and image build guide (module material)
-- Kubernetes official documentation, kubectl reference and RBAC pages, accessed during this assignment (September 2026)
+Kind. (n.d.). *Quick start*. Kind Documentation. Retrieved September 7, 2026, from https://kind.sigs.k8s.io/docs/user/quick-start/
+ 
+Kubernetes. (n.d.-a). *Kubernetes components*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/concepts/overview/components/
+ 
+Kubernetes. (n.d.-b). *Namespaces*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
+ 
+Kubernetes. (n.d.-c). *Resource quotas*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/concepts/policy/resource-quotas/
+ 
+Kubernetes. (n.d.-d). *Secrets*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/concepts/configuration/secret/
+ 
+Kubernetes. (n.d.-e). *Service*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/concepts/services-networking/service/
+ 
+Kubernetes. (n.d.-f). *Using RBAC authorization*. Kubernetes Documentation. Retrieved September 7, 2026, from https://kubernetes.io/docs/reference/access-authn-authz/rbac/
