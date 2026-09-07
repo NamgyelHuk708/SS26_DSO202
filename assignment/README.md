@@ -48,7 +48,7 @@ Context set to use this namespace by default:
 
 ![context namespace](evidence/task1-03-context-namespace.png)
 
-### Architecture Note (revised)
+### Architecture Note
  
 This assignment deploys a three tier Task Tracker into the namespace `dso202-assignment-01`, on top of the existing three node kind cluster (`dso202`) built in Practical 1. Working through this task by task made it much clearer how the different Kubernetes objects actually map onto real application tiers, rather than just being separate topics from the lecture.
  
