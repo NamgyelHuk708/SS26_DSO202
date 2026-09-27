@@ -107,7 +107,7 @@ While pulling the database image, the Pod got stuck in `ImagePullBackOff`. Check
 no match for platform in manifest: not found
 ```
 
-Running `docker manifest inspect sarojsanyasi/dso202-db:1.0` confirmed the image only has an arm64 build, while this machine is amd64. This was reported to the tutor by email, since it likely affects every student on an x86 machine, and the same problem showed up for the backend and frontend images too.
+Running `docker manifest inspect sarojsanyasi/dso202-db:1.0` confirmed the image only has an arm64 build, while this machine is amd64. The same problem showed up for the backend and frontend images too.
 
 As a workaround, each image was pulled using `--platform linux/arm64` and QEMU emulation, then loaded directly into the kind nodes using `kind load docker-image`, instead of relying on a normal registry pull. Each Deployment therefore uses `imagePullPolicy: Never` instead of the usual `IfNotPresent`, since the image is already sitting on the node rather than being pulled fresh. This should be switched back once the tutor publishes a fixed image.
 
