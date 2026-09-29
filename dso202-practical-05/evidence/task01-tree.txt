@@ -1,0 +1,18 @@
+examples/webapp
+├── base
+│   ├── deployment.yaml
+│   ├── index.html
+│   ├── kustomization.yaml
+│   └── service.yaml
+└── overlays
+    ├── dev
+    │   ├── index.html
+    │   ├── kustomization.yaml
+    │   └── namespace.yaml
+    ├── prod
+    │   ├── kustomization.yaml
+    │   └── patch-resources.yaml
+    └── staging
+        └── kustomization.yaml
+
+5 directories, 10 files

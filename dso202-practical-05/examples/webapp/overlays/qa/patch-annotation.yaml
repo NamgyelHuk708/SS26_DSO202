@@ -1,0 +1,10 @@
+# =============================================================================
+# File        : examples/webapp/overlays/qa/patch-annotation.yaml
+# Purpose     : JSON 6902 patch. One operation at one exact path.
+# ESCAPING    : '/' inside a key is written '~1':
+#                 training.example.com/owner -> training.example.com~1owner
+# PRECONDITION: /metadata/annotations must already exist (the base has it).
+# =============================================================================
+- op: add
+  path: /metadata/annotations/training.example.com~1owner
+  value: qa-team

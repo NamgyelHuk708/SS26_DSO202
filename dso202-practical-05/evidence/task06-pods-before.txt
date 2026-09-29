@@ -1,0 +1,2 @@
+NAME                      READY   STATUS    RESTARTS        AGE    IP           NODE            NOMINATED NODE   READINESS GATES
+webapp-59fbb86759-vjhr5   1/1     Running   1 (4m56s ago)   5h6m   10.244.2.2   worker-node-1   <none>           <none>

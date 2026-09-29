@@ -1,0 +1,73 @@
+# =============================================================================
+# File        : examples/webapp/base/deployment.yaml
+# Practical   : DSO202 Practical 5
+# Purpose     : The ONE shared Deployment for every environment. Overlays never
+#               copy this file; they patch or transform it.
+# Note        : No namespace is written here. Each overlay sets it.
+# =============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp
+  labels:
+    app.kubernetes.io/name: webapp
+    dso202/practical: "05"
+    dso202/managed-by: declarative
+  # An annotations map exists on purpose. The QA overlay in Task 9 adds a key
+  # with a JSON 6902 'add' operation, and that operation fails if the parent
+  # map is missing from the rendered object.
+  annotations:
+    dso202.cst.edu.bt/description: "Shared webapp Deployment (base)"
+spec:
+  # Overlays override this with the 'replicas:' transformer.
+  replicas: 2
+
+  # The selector is immutable after creation. It uses only the stable name
+  # label, and the overlays are configured NOT to add labels to selectors.
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webapp
+    spec:
+      containers:
+        - name: webapp
+          # Pinned tag, never 'latest', so the manifest is reproducible.
+          image: nginx:1.30-alpine
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          # The generated ConfigMap is mounted over nginx's web root, so the
+          # page served is whatever index.html the overlay generated.
+          volumeMounts:
+            - name: web-content
+              mountPath: /usr/share/nginx/html
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+
+          # Base values. The prod overlay patches these (Task 8).
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+
+      volumes:
+        - name: web-content
+          configMap:
+            # This is the LOGICAL name. Kustomize rewrites it to the hashed
+            # generated name, for example web-content-XXXXXXXXXX.
+            name: web-content

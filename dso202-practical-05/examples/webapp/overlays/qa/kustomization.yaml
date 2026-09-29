@@ -1,0 +1,38 @@
+# =============================================================================
+# File        : examples/webapp/overlays/qa/kustomization.yaml
+# Purpose     : QA overlay on the SAME base. No copied Deployment or Service.
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: webapp-qa
+
+replicas:
+  - name: webapp
+    count: 2
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: qa
+    includeSelectors: false
+    includeTemplates: true
+
+configMapGenerator:
+  - name: web-content
+    behavior: replace
+    files:
+      - index.html
+
+# 'target' is required for a JSON 6902 patch: the patch file itself does not
+# say which object to change.
+patches:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: webapp
+    path: patch-annotation.yaml

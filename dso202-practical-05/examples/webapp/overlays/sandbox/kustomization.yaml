@@ -1,0 +1,12 @@
+# =============================================================================
+# File        : examples/webapp/overlays/sandbox/kustomization.yaml
+# Purpose     : Challenge extension. Only a namePrefix on top of the base.
+#               Render-only; not deployed.
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namePrefix: sandbox-

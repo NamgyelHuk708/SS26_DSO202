@@ -1,0 +1,2 @@
+NAME                      READY   STATUS    RESTARTS   AGE     IP           NODE            NOMINATED NODE   READINESS GATES
+webapp-75476cbc45-n5zg4   1/1     Running   0          3m28s   10.244.1.2   worker-node-2   <none>           <none>

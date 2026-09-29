@@ -1,0 +1,83 @@
+apiVersion: v1
+data:
+  index.html: |-
+    <!-- File: examples/webapp/base/index.html
+         Default page. Every overlay replaces it, so seeing this text in a browser
+         means an overlay's generator is not working. -->
+    <!DOCTYPE html>
+    <html>
+      <head><title>webapp base</title></head>
+      <body>
+        <h1>BASE — default page (should be replaced by an overlay)</h1>
+      </body>
+    </html>
+kind: ConfigMap
+metadata:
+  name: sandbox-web-content-9542c4fdtg
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/name: webapp
+    dso202/managed-by: declarative
+    dso202/practical: "05"
+  name: sandbox-webapp
+spec:
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/name: webapp
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    dso202.cst.edu.bt/description: Shared webapp Deployment (base)
+  labels:
+    app.kubernetes.io/name: webapp
+    dso202/managed-by: declarative
+    dso202/practical: "05"
+  name: sandbox-webapp
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webapp
+    spec:
+      containers:
+      - image: nginx:1.30-alpine
+        imagePullPolicy: IfNotPresent
+        name: webapp
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        resources:
+          limits:
+            cpu: 100m
+            memory: 64Mi
+          requests:
+            cpu: 25m
+            memory: 32Mi
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: web-content
+      volumes:
+      - configMap:
+          name: sandbox-web-content-9542c4fdtg
+        name: web-content

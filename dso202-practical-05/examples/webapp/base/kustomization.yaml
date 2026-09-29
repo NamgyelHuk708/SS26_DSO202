@@ -1,0 +1,20 @@
+# =============================================================================
+# File        : examples/webapp/base/kustomization.yaml
+# Practical   : DSO202 Practical 5
+# Purpose     : Compose the shared resources and generate the ConfigMap.
+# Render with : kubectl kustomize examples/webapp/base
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Compose: the resources that exist once for all environments.
+resources:
+  - deployment.yaml
+  - service.yaml
+
+# Generate: index.html becomes a ConfigMap named web-content-<hash>. The file
+# name becomes the key. Kustomize rewrites the Deployment's reference to match.
+configMapGenerator:
+  - name: web-content
+    files:
+      - index.html

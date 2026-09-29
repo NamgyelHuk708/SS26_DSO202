@@ -1,0 +1,23 @@
+# =============================================================================
+# File        : examples/webapp/base/service.yaml
+# Practical   : DSO202 Practical 5
+# Purpose     : The ONE shared Service. Selects the Deployment's Pods by the
+#               stable name label only.
+# =============================================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp
+  labels:
+    app.kubernetes.io/name: webapp
+    dso202/practical: "05"
+    dso202/managed-by: declarative
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webapp
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

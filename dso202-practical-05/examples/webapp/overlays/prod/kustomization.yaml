@@ -1,0 +1,32 @@
+# =============================================================================
+# File        : examples/webapp/overlays/prod/kustomization.yaml
+# Purpose     : Thin overlay for prod: 4 replicas, stronger resource policy.
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: webapp-prod
+
+replicas:
+  - name: webapp
+    count: 4
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: prod
+    includeSelectors: false
+    includeTemplates: true
+
+configMapGenerator:
+  - name: web-content
+    behavior: replace
+    files:
+      - index.html
+
+# Patch order matters. There is only one patch here, on purpose.
+patches:
+  - path: patch-resources.yaml

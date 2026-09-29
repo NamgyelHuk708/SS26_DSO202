@@ -1,0 +1,4 @@
+namespace/webapp-dev unchanged
+configmap/web-content-kf7g2h295b created
+service/webapp unchanged
+deployment.apps/webapp configured

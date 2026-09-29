@@ -1,0 +1,11 @@
+NAMESPACE        NAME                     READY   UP-TO-DATE   AVAILABLE   AGE
+webapp-dev       deployment.apps/webapp   1/1     1            1           5h24m
+webapp-prod      deployment.apps/webapp   4/4     4            4           9m12s
+webapp-qa        deployment.apps/webapp   2/2     2            2           3m11s
+webapp-staging   deployment.apps/webapp   2/2     2            2           9m12s
+
+NAMESPACE        NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)   AGE
+webapp-dev       service/webapp   ClusterIP   10.96.108.228   <none>        80/TCP    5h24m
+webapp-prod      service/webapp   ClusterIP   10.96.123.228   <none>        80/TCP    9m12s
+webapp-qa        service/webapp   ClusterIP   10.96.73.160    <none>        80/TCP    3m11s
+webapp-staging   service/webapp   ClusterIP   10.96.4.186     <none>        80/TCP    9m12s

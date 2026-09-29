@@ -1,0 +1,29 @@
+# =============================================================================
+# File        : examples/webapp/overlays/staging/kustomization.yaml
+# Practical   : DSO202 Practical 5
+# Purpose     : Thin overlay for staging: 2 replicas, environment label staging.
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: webapp-staging
+
+replicas:
+  - name: webapp
+    count: 2
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: staging
+    includeSelectors: false
+    includeTemplates: true
+
+configMapGenerator:
+  - name: web-content
+    behavior: replace
+    files:
+      - index.html

@@ -1,0 +1,11 @@
+# =============================================================================
+# File        : examples/webapp/overlays/prod/namespace.yaml
+# Purpose     : Create the webapp-prod namespace as part of this overlay.
+# =============================================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: webapp-prod
+  labels:
+    dso202/practical: "05"
+    dso202/managed-by: declarative

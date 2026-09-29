@@ -1,0 +1,36 @@
+# =============================================================================
+# File        : examples/webapp/overlays/dev/kustomization.yaml
+# Practical   : DSO202 Practical 5
+# Purpose     : Thin overlay. States only what differs for dev.
+# Render with : kubectl kustomize examples/webapp/overlays/dev
+# =============================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+# Puts every namespaced resource in webapp-dev. The name must match
+# namespace.yaml.
+namespace: webapp-dev
+
+# Purpose-built replica transformer: dev runs a single Pod.
+replicas:
+  - name: webapp
+    count: 1
+
+# includeSelectors is false ON PURPOSE: adding this label to selectors would
+# change Deployment/Service selectors. includeTemplates puts it on the Pods.
+labels:
+  - pairs:
+      app.kubernetes.io/environment: dev
+    includeSelectors: false
+    includeTemplates: true
+
+# Replace the base's generated ConfigMap with dev's own page.
+configMapGenerator:
+  - name: web-content
+    behavior: replace
+    files:
+      - index.html

@@ -1,0 +1,99 @@
+--- /tmp/webapp-dev.yaml	2026-09-29 14:30:41.161570517 +0600
++++ /tmp/webapp-prod.yaml	2026-09-29 14:30:41.292573317 +0600
+@@ -2,39 +2,39 @@
+ kind: Namespace
+ metadata:
+   labels:
+-    app.kubernetes.io/environment: dev
++    app.kubernetes.io/environment: prod
+     dso202/managed-by: declarative
+     dso202/practical: "05"
+-  name: webapp-dev
++  name: webapp-prod
+ ---
+ apiVersion: v1
+ data:
+-  index.html: |-
+-    <!-- File: examples/webapp/overlays/dev/index.html -->
++  index.html: |
++    <!-- File: examples/webapp/overlays/prod/index.html -->
+     <!DOCTYPE html>
+     <html>
+-      <head><title>webapp dev</title></head>
++      <head><title>webapp prod</title></head>
+       <body>
+-        <h1>DEV — webapp development environment</h1>
++        <h1>PROD — production environment</h1>
+       </body>
+     </html>
+ kind: ConfigMap
+ metadata:
+   labels:
+-    app.kubernetes.io/environment: dev
+-  name: web-content-8m26b62479
+-  namespace: webapp-dev
++    app.kubernetes.io/environment: prod
++  name: web-content-5ch65222dd
++  namespace: webapp-prod
+ ---
+ apiVersion: v1
+ kind: Service
+ metadata:
+   labels:
+-    app.kubernetes.io/environment: dev
++    app.kubernetes.io/environment: prod
+     app.kubernetes.io/name: webapp
+     dso202/managed-by: declarative
+     dso202/practical: "05"
+   name: webapp
+-  namespace: webapp-dev
++  namespace: webapp-prod
+ spec:
+   ports:
+   - name: http
+@@ -51,21 +51,21 @@
+   annotations:
+     dso202.cst.edu.bt/description: Shared webapp Deployment (base)
+   labels:
+-    app.kubernetes.io/environment: dev
++    app.kubernetes.io/environment: prod
+     app.kubernetes.io/name: webapp
+     dso202/managed-by: declarative
+     dso202/practical: "05"
+   name: webapp
+-  namespace: webapp-dev
++  namespace: webapp-prod
+ spec:
+-  replicas: 1
++  replicas: 4
+   selector:
+     matchLabels:
+       app.kubernetes.io/name: webapp
+   template:
+     metadata:
+       labels:
+-        app.kubernetes.io/environment: dev
++        app.kubernetes.io/environment: prod
+         app.kubernetes.io/name: webapp
+     spec:
+       containers:
+@@ -84,15 +84,15 @@
+           periodSeconds: 5
+         resources:
+           limits:
++            cpu: 250m
++            memory: 128Mi
++          requests:
+             cpu: 100m
+             memory: 64Mi
+-          requests:
+-            cpu: 25m
+-            memory: 32Mi
+         volumeMounts:
+         - mountPath: /usr/share/nginx/html
+           name: web-content
+       volumes:
+       - configMap:
+-          name: web-content-8m26b62479
++          name: web-content-5ch65222dd
+         name: web-content
