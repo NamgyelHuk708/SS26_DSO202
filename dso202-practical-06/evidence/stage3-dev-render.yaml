@@ -1,0 +1,153 @@
+---
+# Source: webapp/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-dev
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-dev
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "dev"
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>DSO202 Helm Demo</title></head>
+      <body>
+        <h1>DSO202 Helm Demo</h1>
+        <p>Development build - not for customers</p>
+        <p>Environment: dev</p>
+        <p>Release: webapp-dev in namespace dso202-dev</p>
+        <p>Chart: webapp-0.1.0, application version 1.30-alpine</p>
+      </body>
+    </html>
+---
+# Source: webapp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-dev
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-dev
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "dev"
+spec:
+  type: NodePort
+  selector:
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-dev
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+      nodePort: 30080
+---
+# Source: webapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-dev
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-dev
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "dev"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/instance: webapp-dev
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: webapp-0.1.0
+        app.kubernetes.io/name: webapp
+        app.kubernetes.io/instance: webapp-dev
+        app.kubernetes.io/version: "1.30-alpine"
+        app.kubernetes.io/managed-by: Helm
+        dso202/environment: "dev"
+      annotations:
+        # A hash of the rendered ConfigMap. When the page content changes, the
+        # hash changes, the Pod template changes, and the Deployment rolls
+        # out new Pods. Without it, a ConfigMap change never restarts Pods.
+        checksum/config: ba6522a4577c8f3b45320a85b09a723520ecb65e55b6e7aecc132195ddf72c3c
+    spec:
+      containers:
+        - name: nginx
+          image: "nginx:1.30-alpine"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 200m
+              memory: 64Mi
+            requests:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: html
+          configMap:
+            name: webapp-dev
+---
+# Source: webapp/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: webapp-dev-test-connection
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-dev
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "dev"
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: wget
+      image: busybox:1.37
+      # A block scalar (|) is used because the script contains ": ", which
+      # YAML would otherwise read as a key-value separator.
+      command:
+        - sh
+        - -c
+        - |
+          wget -qO- http://webapp-dev:80 | grep "Environment: dev"
+      resources:
+        requests:
+          cpu: 10m
+          memory: 16Mi
+        limits:
+          cpu: 50m
+          memory: 32Mi

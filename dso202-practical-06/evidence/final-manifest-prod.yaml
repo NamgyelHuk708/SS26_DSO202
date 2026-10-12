@@ -1,0 +1,118 @@
+---
+# Source: webapp/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: webapp-prod
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-prod
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "prod"
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head><title>DSO202 Helm Demo</title></head>
+      <body>
+        <h1>DSO202 Helm Demo</h1>
+        <p>Production</p>
+        <p>Environment: prod</p>
+        <p>Release: webapp-prod in namespace dso202-prod</p>
+        <p>Chart: webapp-0.1.0, application version 1.30-alpine</p>
+      </body>
+    </html>
+---
+# Source: webapp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-prod
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-prod
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "prod"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-prod
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP
+---
+# Source: webapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-prod
+  labels:
+    helm.sh/chart: webapp-0.1.0
+    app.kubernetes.io/name: webapp
+    app.kubernetes.io/instance: webapp-prod
+    app.kubernetes.io/version: "1.30-alpine"
+    app.kubernetes.io/managed-by: Helm
+    dso202/environment: "prod"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp
+      app.kubernetes.io/instance: webapp-prod
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: webapp-0.1.0
+        app.kubernetes.io/name: webapp
+        app.kubernetes.io/instance: webapp-prod
+        app.kubernetes.io/version: "1.30-alpine"
+        app.kubernetes.io/managed-by: Helm
+        dso202/environment: "prod"
+      annotations:
+        # A hash of the rendered ConfigMap. When the page content changes, the
+        # hash changes, the Pod template changes, and the Deployment rolls
+        # out new Pods. Without it, a ConfigMap change never restarts Pods.
+        checksum/config: 3721d5ecbeecc5181e8cf208fdb7bffa3e6bb50f3b5f8ae5e0ff2e14105ee8ac
+    spec:
+      containers:
+        - name: nginx
+          image: "nginx:1.30-alpine"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+      volumes:
+        - name: html
+          configMap:
+            name: webapp-prod
+

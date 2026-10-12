@@ -1,0 +1,3 @@
+NAME       	NAMESPACE  	REVISION	UPDATED                                	STATUS  	CHART       	APP VERSION
+webapp-dev 	dso202-dev 	5       	2026-10-12 22:09:09.427590128 +0600 +06	deployed	webapp-0.1.0	1.30-alpine
+webapp-prod	dso202-prod	3       	2026-10-12 22:11:18.096942225 +0600 +06	deployed	webapp-0.1.0	1.30-alpine

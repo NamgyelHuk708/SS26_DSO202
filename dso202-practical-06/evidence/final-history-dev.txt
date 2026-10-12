@@ -1,0 +1,6 @@
+REVISION	UPDATED                 	STATUS    	CHART       	APP VERSION	DESCRIPTION                                                                                                                          
+1       	Mon Oct 12 22:02:46 2026	superseded	webapp-0.1.0	1.30-alpine	Install complete                                                                                                                     
+2       	Mon Oct 12 22:06:18 2026	superseded	webapp-0.1.0	1.30-alpine	Upgrade complete                                                                                                                     
+3       	Mon Oct 12 22:07:05 2026	superseded	webapp-0.1.0	1.30-alpine	Rollback to 1                                                                                                                        
+4       	Mon Oct 12 22:07:38 2026	failed    	webapp-0.1.0	1.30-alpine	Upgrade "webapp-dev" failed: resource Deployment/dso202-dev/webapp-dev not ready. status: InProgress, message: Pending termination...
+5       	Mon Oct 12 22:09:09 2026	deployed  	webapp-0.1.0	1.30-alpine	Rollback to 3                                                                                                                        
