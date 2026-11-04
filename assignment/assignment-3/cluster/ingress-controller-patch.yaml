@@ -1,0 +1,14 @@
+# Pin the ingress-nginx controller to the node labelled ingress-ready=true
+# (the control-plane), because only that node has host port 30080 mapped
+# to its port 80 in kind-cluster.yaml. The toleration allows scheduling on
+# the control-plane despite its NoSchedule taint.
+spec:
+  template:
+    spec:
+      nodeSelector:
+        ingress-ready: "true"
+        kubernetes.io/os: linux
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
