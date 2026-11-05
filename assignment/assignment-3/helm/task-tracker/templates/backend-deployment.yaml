@@ -1,0 +1,44 @@
+{{- /* backend-deployment.yaml - Node.js API. */}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "task-tracker.backendName" . }}
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "backend") | nindent 4 }}
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "task-tracker.selectorLabels" (dict "ctx" . "component" "backend") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "task-tracker.labels" (dict "ctx" . "component" "backend") | nindent 8 }}
+      annotations:
+        {{- include "task-tracker.configChecksums" . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: backend
+          image: {{ include "task-tracker.image" (dict "ctx" . "img" .Values.images.backend) | quote }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.port }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "task-tracker.configName" . }}
+            - secretRef:
+                name: {{ include "task-tracker.secretName" . }}
+          # /api/status runs SELECT 1, so "ready" means "can reach the database".
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

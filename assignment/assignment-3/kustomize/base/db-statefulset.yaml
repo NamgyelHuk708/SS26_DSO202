@@ -1,0 +1,75 @@
+# Database tier: StatefulSet from Assignment 2.
+# Fixed vs A2: the Pod template now carries app: database as well as
+# tier: database, so the headless Service db-svc (which selects on both)
+# finds the Pod. In A2 this mismatch left db-svc with no endpoints.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: db
+  labels:
+    app: database
+    tier: database
+spec:
+  serviceName: db-svc            # the headless Service that gives db-0 its DNS name
+  replicas: 1                    # single-node Postgres image: no replication logic (see A2)
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app: database
+      tier: database
+  template:
+    metadata:
+      labels:
+        app: database
+        tier: database
+    spec:
+      containers:
+        - name: db
+          image: sarojsanyasi/dso202-db:1.0
+          # arm64-only image, side-loaded with `kind load docker-image` and run
+          # under QEMU emulation, so the kubelet must never try to pull it.
+          imagePullPolicy: Never
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          # Generous timings: Postgres runs under arm64 emulation and starts slowly.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain

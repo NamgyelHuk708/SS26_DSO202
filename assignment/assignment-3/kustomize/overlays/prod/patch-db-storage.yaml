@@ -1,0 +1,6 @@
+# JSON 6902: volumeClaimTemplates is a list, so an exact index path is clearest.
+# NOTE: volumeClaimTemplates cannot be changed on an existing StatefulSet,
+# so this size must be right when prod is first created.
+- op: replace
+  path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+  value: 2Gi

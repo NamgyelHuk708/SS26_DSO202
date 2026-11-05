@@ -1,0 +1,15 @@
+{{- /* db-service.yaml - headless Service: gives db-0 a stable DNS name. */}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "task-tracker.dbName" . }}
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "database") | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    {{- include "task-tracker.selectorLabels" (dict "ctx" . "component" "database") | nindent 4 }}
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

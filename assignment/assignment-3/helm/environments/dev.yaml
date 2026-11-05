@@ -1,0 +1,7 @@
+# environments/dev.yaml - overrides for the development release.
+# Used alone on top of the chart defaults (never layered with prod.yaml).
+environment: dev
+ingress:
+  host: helm-dev.tasks.local
+# Everything else (1 replica per tier, 1Gi volume, default quota) comes
+# from the chart's values.yaml.

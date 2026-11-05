@@ -1,0 +1,17 @@
+{{- /* configmap.yaml - non-secret settings shared by all three tiers. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "task-tracker.configName" . }}
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "config") | nindent 4 }}
+data:
+  # The backend's DB_HOST is built from the same helper that names the
+  # headless Service, so it can never drift from the real Service name.
+  DB_HOST: {{ include "task-tracker.dbName" . | quote }}
+  DB_PORT: "5432"
+  DB_NAME: {{ .Values.database.name | quote }}
+  POSTGRES_DB: {{ .Values.database.name | quote }}
+  APP_PORT: {{ .Values.backend.port | quote }}
+  CORS_ORIGIN: {{ .Values.backend.corsOrigin | quote }}
+  BACKEND_URL: {{ .Values.frontend.backendUrl | quote }}

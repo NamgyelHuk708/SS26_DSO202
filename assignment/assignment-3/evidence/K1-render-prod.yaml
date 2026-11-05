@@ -1,0 +1,436 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+  name: dso202-a3-kust-prod
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: task-tracker-quota
+  namespace: dso202-a3-kust-prod
+spec:
+  hard:
+    count/configmaps: "10"
+    count/secrets: "10"
+    count/services: "5"
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    persistentvolumeclaims: "2"
+    pods: "15"
+    requests.cpu: "2"
+    requests.memory: 2Gi
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: readonly-viewer
+  namespace: dso202-a3-kust-prod
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: namespace-viewer
+  namespace: dso202-a3-kust-prod
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - configmaps
+  - secrets
+  - persistentvolumeclaims
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: readonly-viewer-binding
+  namespace: dso202-a3-kust-prod
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: namespace-viewer
+subjects:
+- kind: ServiceAccount
+  name: readonly-viewer
+  namespace: dso202-a3-kust-prod
+---
+apiVersion: v1
+data:
+  APP_PORT: "8080"
+  BACKEND_URL: .
+  CORS_ORIGIN: http://kust-prod.tasks.local:30080
+  DB_HOST: db-svc
+  DB_NAME: tasksdb
+  DB_PORT: "5432"
+  POSTGRES_DB: tasksdb
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: app-config-f4mb4k92hc
+  namespace: dso202-a3-kust-prod
+---
+apiVersion: v1
+data:
+  DB_PASSWORD: cGFzc3dvcmQ=
+  DB_USER: dGFza3VzZXI=
+  POSTGRES_PASSWORD: cGFzc3dvcmQ=
+  POSTGRES_USER: dGFza3VzZXI=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+  name: app-secret-2hkkcb4m4k
+  namespace: dso202-a3-kust-prod
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: backend
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: backend
+  name: backend-svc
+  namespace: dso202-a3-kust-prod
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app: backend
+    tier: backend
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: database
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: database
+  name: db-svc
+  namespace: dso202-a3-kust-prod
+spec:
+  clusterIP: None
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: postgres
+  selector:
+    app: database
+    tier: database
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: frontend
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: frontend
+  name: frontend-svc
+  namespace: dso202-a3-kust-prod
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+  selector:
+    app: frontend
+    tier: frontend
+  type: ClusterIP
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: task-tracker-limits
+  namespace: dso202-a3-kust-prod
+spec:
+  limits:
+  - default:
+      cpu: 200m
+      memory: 128Mi
+    defaultRequest:
+      cpu: 50m
+      memory: 64Mi
+    max:
+      cpu: "1"
+      memory: 1Gi
+    min:
+      cpu: 10m
+      memory: 16Mi
+    type: Container
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: backend
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: backend
+  name: backend
+  namespace: dso202-a3-kust-prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+        app.kubernetes.io/environment: prod
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/part-of: task-tracker
+        tier: backend
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: app-config-f4mb4k92hc
+        - secretRef:
+            name: app-secret-2hkkcb4m4k
+        image: sarojsanyasi/dso202-backend:1.0
+        imagePullPolicy: Never
+        name: backend
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /api/status
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 200m
+            memory: 256Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: frontend
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: frontend
+  name: frontend
+  namespace: dso202-a3-kust-prod
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        app.kubernetes.io/environment: prod
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/part-of: task-tracker
+        tier: frontend
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: app-config-f4mb4k92hc
+        image: sarojsanyasi/dso202-frontend:1.0
+        imagePullPolicy: Never
+        name: frontend
+        ports:
+        - containerPort: 8080
+          name: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: 200m
+            memory: 128Mi
+          requests:
+            cpu: 50m
+            memory: 64Mi
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: database
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+    tier: database
+  name: db
+  namespace: dso202-a3-kust-prod
+spec:
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+  podManagementPolicy: OrderedReady
+  replicas: 1
+  selector:
+    matchLabels:
+      app: database
+      tier: database
+  serviceName: db-svc
+  template:
+    metadata:
+      labels:
+        app: database
+        app.kubernetes.io/environment: prod
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/part-of: task-tracker
+        tier: database
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: app-config-f4mb4k92hc
+        - secretRef:
+            name: app-secret-2hkkcb4m4k
+        image: sarojsanyasi/dso202-db:1.0
+        imagePullPolicy: Never
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+          failureThreshold: 5
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+        name: db
+        ports:
+        - containerPort: 5432
+          name: postgres
+        readinessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: data
+  volumeClaimTemplates:
+  - metadata:
+      labels:
+        app.kubernetes.io/environment: prod
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/part-of: task-tracker
+      name: data
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 2Gi
+      storageClassName: standard
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  labels:
+    app.kubernetes.io/environment: prod
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: task-tracker
+  name: task-tracker
+  namespace: dso202-a3-kust-prod
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: kust-prod.tasks.local
+    http:
+      paths:
+      - backend:
+          service:
+            name: backend-svc
+            port:
+              name: http
+        path: /api
+        pathType: Prefix
+      - backend:
+          service:
+            name: frontend-svc
+            port:
+              name: http
+        path: /
+        pathType: Prefix

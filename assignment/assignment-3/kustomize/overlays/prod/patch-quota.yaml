@@ -1,0 +1,14 @@
+# Prod workload totals (db 1, backend 2 at prod size, frontend 2):
+#   requests: cpu 600m, memory 768Mi   limits: cpu 1900m, memory 1792Mi
+# Headroom for one backend surge Pod during a rolling update plus test Pods.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: task-tracker-quota
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    pods: "15"

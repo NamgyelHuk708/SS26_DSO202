@@ -1,0 +1,39 @@
+{{- /*
+tests/test-connection.yaml - run by `helm test`; the Pod must exit 0.
+Checks three paths: backend Service (API + DB), frontend Service, and the
+full external path through the NGINX Ingress controller using the release's
+Host header. The hook annotation keeps it out of install/upgrade.
+*/}}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "task-tracker.fullname" . }}-test
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "test") | nindent 4 }}
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: busybox:1.37
+      imagePullPolicy: IfNotPresent
+      # Block scalar (|) so the ": " inside the script is not read as YAML.
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          echo "1) backend Service -> /api/status"
+          wget -qO- http://{{ include "task-tracker.backendName" . }}:{{ .Values.backend.port }}/api/status | tee /dev/stderr | grep -q '"db":"connected"'
+          echo; echo "2) frontend Service -> /"
+          wget -qO- http://{{ include "task-tracker.frontendName" . }}:{{ .Values.frontend.port }}/ | grep -qi '<html'
+          echo "frontend OK"
+          echo "3) Ingress ({{ .Values.ingress.host }}) -> /api/tasks"
+          wget -qO- --header "Host: {{ .Values.ingress.host }}" http://ingress-nginx-controller.ingress-nginx.svc/api/tasks | grep -q '"title"'
+          echo "ingress OK"
+          echo "ALL TESTS PASSED"
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits:   { cpu: 50m, memory: 32Mi }

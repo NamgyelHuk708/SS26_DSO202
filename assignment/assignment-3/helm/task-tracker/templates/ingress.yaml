@@ -1,0 +1,27 @@
+{{- /* ingress.yaml - one host per release; /api -> backend, / -> frontend. */}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "task-tracker.fullname" . }}
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "ingress") | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ required "ingress.host must be set (one host per environment)" .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "task-tracker.backendName" . }}
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "task-tracker.frontendName" . }}
+                port:
+                  name: http

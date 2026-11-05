@@ -1,0 +1,35 @@
+# Dev overlay: the base as-is (1 replica per tier), in its own namespace,
+# reachable at http://kust-dev.tasks.local:30080
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: dso202-a3-kust-dev
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: dev
+    includeSelectors: false
+    includeTemplates: true
+
+# Credentials for THIS environment only, from a gitignored file
+# (copy db-secret.env.example to db-secret.env and set a password).
+secretGenerator:
+  - name: app-secret
+    envs:
+      - db-secret.env
+
+patches:
+  # Tiny one-field change -> inline JSON 6902 at an exact path.
+  - target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: task-tracker
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: kust-dev.tasks.local

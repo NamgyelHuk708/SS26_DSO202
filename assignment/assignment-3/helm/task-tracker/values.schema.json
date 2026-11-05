@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "task-tracker values",
+  "type": "object",
+  "required": ["environment", "images", "database", "backend", "frontend", "ingress"],
+  "properties": {
+    "environment": { "enum": ["", "dev", "staging", "prod"] },
+    "images": {
+      "type": "object",
+      "required": ["pullPolicy", "database", "backend", "frontend"],
+      "properties": {
+        "pullPolicy": { "enum": ["Always", "IfNotPresent", "Never"] },
+        "database": { "$ref": "#/$defs/image" },
+        "backend":  { "$ref": "#/$defs/image" },
+        "frontend": { "$ref": "#/$defs/image" }
+      }
+    },
+    "database": {
+      "type": "object",
+      "required": ["name", "user", "password", "storage", "resources"],
+      "properties": {
+        "name":     { "type": "string", "minLength": 1 },
+        "user":     { "type": "string" },
+        "password": { "type": "string" },
+        "storage": {
+          "type": "object",
+          "required": ["size", "storageClassName"],
+          "properties": {
+            "size": { "type": "string", "pattern": "^[0-9]+(Mi|Gi)$" },
+            "storageClassName": { "type": "string", "minLength": 1 }
+          }
+        },
+        "resources": { "type": "object" }
+      }
+    },
+    "backend":  { "$ref": "#/$defs/tier" },
+    "frontend": { "$ref": "#/$defs/tier" },
+    "ingress": {
+      "type": "object",
+      "required": ["className", "host"],
+      "properties": {
+        "className": { "type": "string", "minLength": 1 },
+        "host": { "type": "string", "pattern": "^$|^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$" }
+      }
+    },
+    "quota": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "hard": { "type": "object", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "rbac": { "type": "object", "properties": { "create": { "type": "boolean" } } },
+    "podAnnotations": { "type": "object", "additionalProperties": { "type": "string" } },
+    "nameOverride": { "type": "string" },
+    "fullnameOverride": { "type": "string" }
+  },
+  "$defs": {
+    "image": {
+      "type": "object",
+      "required": ["repository", "tag"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "tag": { "type": "string" }
+      }
+    },
+    "tier": {
+      "type": "object",
+      "required": ["replicaCount", "port", "resources"],
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "corsOrigin": { "type": "string" },
+        "backendUrl": { "type": "string", "minLength": 1 },
+        "resources": { "type": "object" }
+      }
+    }
+  }
+}

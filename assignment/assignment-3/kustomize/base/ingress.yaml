@@ -1,0 +1,28 @@
+# One Ingress per environment, told apart by host name. Every environment
+# shares one NGINX controller, so two Ingresses with no host and the same
+# paths would conflict. The host below is a placeholder that each overlay
+# replaces with a JSON 6902 patch (rules/0/host).
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: task-tracker
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tasks.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-svc
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-svc
+                port:
+                  name: http

@@ -1,0 +1,79 @@
+# values.yaml - default configuration of the task-tracker chart.
+# Every key can be overridden with -f <file> or --set <key>=<value>.
+# Environment differences live in ../environments/<env>.yaml, credentials in
+# the gitignored ../environments/secrets-<env>.yaml.
+
+# Environment name. No default on purpose: rendering stops until it is set.
+environment: ""
+
+# The three images are arm64-only and side-loaded with `kind load`, so the
+# kubelet must never pull them (pullPolicy Never). An empty tag means
+# "use .Chart.AppVersion".
+images:
+  pullPolicy: Never
+  database:
+    repository: sarojsanyasi/dso202-db
+    tag: ""
+  backend:
+    repository: sarojsanyasi/dso202-backend
+    tag: ""
+  frontend:
+    repository: sarojsanyasi/dso202-frontend
+    tag: ""
+
+database:
+  name: tasksdb
+  # Credentials have no defaults: supply them from a gitignored file.
+  user: ""
+  password: ""
+  storage:
+    size: 1Gi
+    storageClassName: standard
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+
+backend:
+  replicaCount: 1
+  port: 8080
+  # "*" is fine here because the browser calls the API on the SAME origin
+  # (through the Ingress); prod narrows it to its own host anyway.
+  corsOrigin: "*"
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits:   { cpu: 300m, memory: 256Mi }
+
+frontend:
+  replicaCount: 1
+  port: 8080
+  # "." makes the browser call ./api/tasks (same origin), which the Ingress
+  # routes to the backend. The image's entrypoint keeps any non-empty value.
+  backendUrl: "."
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits:   { cpu: 200m, memory: 128Mi }
+
+ingress:
+  className: nginx
+  # Required: one host per environment, because all environments share
+  # one NGINX controller.
+  host: ""
+
+quota:
+  enabled: true
+  hard:
+    requests.cpu: "1"
+    requests.memory: 1Gi
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    pods: "10"
+    persistentvolumeclaims: "2"
+
+rbac:
+  create: true
+
+# Extra annotations added to every workload Pod.
+podAnnotations: {}
+
+nameOverride: ""
+fullnameOverride: ""

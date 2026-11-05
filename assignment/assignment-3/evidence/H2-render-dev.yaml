@@ -1,0 +1,534 @@
+---
+# Source: task-tracker/templates/quota.yaml
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: task-tracker-dev-quota
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: quota
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  hard:
+    limits.cpu: "2"
+    limits.memory: 2Gi
+    persistentvolumeclaims: "2"
+    pods: "10"
+    requests.cpu: "1"
+    requests.memory: 1Gi
+
+---
+# Source: task-tracker/templates/quota.yaml
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: task-tracker-dev-limits
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: quota
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  limits:
+    - type: Container
+      default:        { cpu: 200m, memory: 128Mi }
+      defaultRequest: { cpu: 50m,  memory: 64Mi }
+      min:            { cpu: 10m,  memory: 16Mi }
+      max:            { cpu: "1",  memory: 1Gi }
+
+---
+# Source: task-tracker/templates/rbac.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: task-tracker-dev-viewer
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+
+---
+# Source: task-tracker/templates/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: task-tracker-dev-secret
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: config
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+type: Opaque
+data:
+  # DB_* is read by the backend, POSTGRES_* by the Postgres image.
+  DB_USER: "dGFza3VzZXI="
+  DB_PASSWORD: "cGFzc3dvcmQ="
+  POSTGRES_USER: "dGFza3VzZXI="
+  POSTGRES_PASSWORD: "cGFzc3dvcmQ="
+
+---
+# Source: task-tracker/templates/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: task-tracker-dev-config
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: config
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+data:
+  # The backend's DB_HOST is built from the same helper that names the
+  # headless Service, so it can never drift from the real Service name.
+  DB_HOST: "task-tracker-dev-db"
+  DB_PORT: "5432"
+  DB_NAME: "tasksdb"
+  POSTGRES_DB: "tasksdb"
+  APP_PORT: "8080"
+  CORS_ORIGIN: "*"
+  BACKEND_URL: "."
+
+---
+# Source: task-tracker/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: task-tracker-dev-viewer
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+rules:
+  - apiGroups: [""]
+    resources: [pods, services, configmaps, secrets, persistentvolumeclaims]
+    verbs: [get, list, watch]
+  - apiGroups: ["apps"]
+    resources: [deployments, replicasets, statefulsets]
+    verbs: [get, list, watch]
+  - apiGroups: ["networking.k8s.io"]
+    resources: [ingresses]
+    verbs: [get, list, watch]
+
+---
+# Source: task-tracker/templates/rbac.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: task-tracker-dev-viewer
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+subjects:
+  - kind: ServiceAccount
+    name: task-tracker-dev-viewer
+    namespace: dso202-a3-helm-dev
+roleRef:
+  kind: Role
+  name: task-tracker-dev-viewer
+  apiGroup: rbac.authorization.k8s.io
+
+---
+# Source: task-tracker/templates/backend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-tracker-dev-backend
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+
+---
+# Source: task-tracker/templates/db-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-tracker-dev-db
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: database
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres
+
+---
+# Source: task-tracker/templates/frontend-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: task-tracker-dev-frontend
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+
+---
+# Source: task-tracker/templates/backend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-tracker-dev-backend
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: task-tracker
+      app.kubernetes.io/instance: task-tracker-dev
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: task-tracker-0.1.0
+        app.kubernetes.io/name: task-tracker
+        app.kubernetes.io/instance: task-tracker-dev
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: task-tracker
+        app.kubernetes.io/environment: "dev"
+      annotations:
+        checksum/config: e2dffa85dbc56bb78bbb0064ac23f9305b63f477d078cda634773e5c37768ed9
+        checksum/secret: 97d897aaaf2a595e863d4bef21bb17948da5f579c988f5a9ccba024de83ac010
+    spec:
+      containers:
+        - name: backend
+          image: "sarojsanyasi/dso202-backend:1.0"
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: task-tracker-dev-config
+            - secretRef:
+                name: task-tracker-dev-secret
+          # /api/status runs SELECT 1, so "ready" means "can reach the database".
+          readinessProbe:
+            httpGet:
+              path: /api/status
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: 300m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# Source: task-tracker/templates/frontend-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: task-tracker-dev-frontend
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: task-tracker
+      app.kubernetes.io/instance: task-tracker-dev
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: task-tracker-0.1.0
+        app.kubernetes.io/name: task-tracker
+        app.kubernetes.io/instance: task-tracker-dev
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: task-tracker
+        app.kubernetes.io/environment: "dev"
+      annotations:
+        checksum/config: e2dffa85dbc56bb78bbb0064ac23f9305b63f477d078cda634773e5c37768ed9
+        checksum/secret: 97d897aaaf2a595e863d4bef21bb17948da5f579c988f5a9ccba024de83ac010
+    spec:
+      containers:
+        - name: frontend
+          image: "sarojsanyasi/dso202-frontend:1.0"
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: task-tracker-dev-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 200m
+              memory: 128Mi
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+---
+# Source: task-tracker/templates/db-statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: task-tracker-dev-db
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: database
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  serviceName: task-tracker-dev-db
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: task-tracker
+      app.kubernetes.io/instance: task-tracker-dev
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: task-tracker-0.1.0
+        app.kubernetes.io/name: task-tracker
+        app.kubernetes.io/instance: task-tracker-dev
+        app.kubernetes.io/component: database
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: Helm
+        app.kubernetes.io/part-of: task-tracker
+        app.kubernetes.io/environment: "dev"
+      annotations:
+        checksum/config: e2dffa85dbc56bb78bbb0064ac23f9305b63f477d078cda634773e5c37768ed9
+        checksum/secret: 97d897aaaf2a595e863d4bef21bb17948da5f579c988f5a9ccba024de83ac010
+    spec:
+      containers:
+        - name: db
+          image: "sarojsanyasi/dso202-db:1.0"
+          imagePullPolicy: Never
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: task-tracker-dev-config
+            - secretRef:
+                name: task-tracker-dev-secret
+          # Generous timings: Postgres runs under arm64 emulation.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+  # PVCs created from this template are owned by the StatefulSet controller,
+  # NOT by Helm: `helm uninstall` leaves them (and the data) behind.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: standard
+        resources:
+          requests:
+            storage: 1Gi
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain
+
+---
+# Source: task-tracker/templates/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: task-tracker-dev
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: ingress
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "helm-dev.tasks.local"
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: task-tracker-dev-backend
+                port:
+                  name: http
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: task-tracker-dev-frontend
+                port:
+                  name: http
+---
+# Source: task-tracker/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: task-tracker-dev-test
+  labels:
+    helm.sh/chart: task-tracker-0.1.0
+    app.kubernetes.io/name: task-tracker
+    app.kubernetes.io/instance: task-tracker-dev
+    app.kubernetes.io/component: test
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/part-of: task-tracker
+    app.kubernetes.io/environment: "dev"
+  annotations:
+    helm.sh/hook: test
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  restartPolicy: Never
+  containers:
+    - name: test
+      image: busybox:1.37
+      imagePullPolicy: IfNotPresent
+      # Block scalar (|) so the ": " inside the script is not read as YAML.
+      command:
+        - sh
+        - -c
+        - |
+          set -e
+          echo "1) backend Service -> /api/status"
+          wget -qO- http://task-tracker-dev-backend:8080/api/status | tee /dev/stderr | grep -q '"db":"connected"'
+          echo; echo "2) frontend Service -> /"
+          wget -qO- http://task-tracker-dev-frontend:8080/ | grep -qi '<html'
+          echo "frontend OK"
+          echo "3) Ingress (helm-dev.tasks.local) -> /api/tasks"
+          wget -qO- --header "Host: helm-dev.tasks.local" http://ingress-nginx-controller.ingress-nginx.svc/api/tasks | grep -q '"title"'
+          echo "ingress OK"
+          echo "ALL TESTS PASSED"
+      resources:
+        requests: { cpu: 10m, memory: 16Mi }
+        limits:   { cpu: 50m, memory: 32Mi }
+

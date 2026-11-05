@@ -1,0 +1,58 @@
+# Prod overlay: 2 replicas of the stateless tiers, more backend resources,
+# a larger database volume and a raised quota, in its own namespace,
+# reachable at http://kust-prod.tasks.local:30080
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - namespace.yaml
+
+namespace: dso202-a3-kust-prod
+
+labels:
+  - pairs:
+      app.kubernetes.io/environment: prod
+    includeSelectors: false
+    includeTemplates: true
+
+# Purpose-built transformer for replica counts. The database stays at 1:
+# its image has no replication logic (see Assignment 2).
+replicas:
+  - name: backend
+    count: 2
+  - name: frontend
+    count: 2
+
+configMapGenerator:
+  # Merge one key into the base's generated app-config; every other key is kept.
+  - name: app-config
+    behavior: merge
+    literals:
+      - CORS_ORIGIN=http://kust-prod.tasks.local:30080
+
+secretGenerator:
+  - name: app-secret
+    envs:
+      - db-secret.env
+
+patches:
+  # Strategic merge: Kubernetes-shaped fragments, matched by kind + name.
+  - path: patch-backend-resources.yaml
+  - path: patch-quota.yaml
+  # JSON 6902: exact paths into a list (volumeClaimTemplates) and the host.
+  - target:
+      group: apps
+      version: v1
+      kind: StatefulSet
+      name: db
+    path: patch-db-storage.yaml
+  - target:
+      group: networking.k8s.io
+      version: v1
+      kind: Ingress
+      name: task-tracker
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: kust-prod.tasks.local

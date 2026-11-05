@@ -1,0 +1,2 @@
+# Real credentials never go into Git; only the .example files are committed.
+overlays/*/db-secret.env

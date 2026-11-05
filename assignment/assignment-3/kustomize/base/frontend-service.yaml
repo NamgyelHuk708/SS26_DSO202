@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  labels:
+    app: frontend
+    tier: frontend
+spec:
+  type: ClusterIP          # Ingress is the only external entry point (A2)
+  selector:
+    app: frontend
+    tier: frontend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

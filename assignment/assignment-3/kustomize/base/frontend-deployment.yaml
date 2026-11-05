@@ -1,0 +1,48 @@
+# Frontend tier. Changed vs A2: the image now runs UNMODIFIED.
+# A1/A2 mounted a custom nginx.conf (with an /api proxy) and a patched
+# entrypoint, because BACKEND_URL was "" and the image's entrypoint replaced an
+# empty value with http://localhost:8080. BACKEND_URL is now "." (config.env):
+# the image keeps it, the browser calls ./api/tasks -> /api/tasks, and the
+# Ingress routes /api to the backend. No custom ConfigMap or subPath mounts.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    tier: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: sarojsanyasi/dso202-frontend:1.0
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: app-config
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

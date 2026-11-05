@@ -1,0 +1,14 @@
+Task Tracker release {{ .Release.Name }} (revision {{ .Release.Revision }}) in namespace {{ .Release.Namespace }}.
+Environment: {{ include "task-tracker.environment" . }}   backend replicas: {{ .Values.backend.replicaCount }}   frontend replicas: {{ .Values.frontend.replicaCount }}
+
+Wait for the database (slow under arm64 emulation), then the backend:
+  kubectl -n {{ .Release.Namespace }} get pods -w
+
+Open the app through the shared NGINX Ingress (host port 30080):
+  http://{{ .Values.ingress.host }}:30080
+  curl -s -H "Host: {{ .Values.ingress.host }}" http://localhost:30080/api/status
+
+Run the chart tests:
+  helm test {{ .Release.Name }} -n {{ .Release.Namespace }} --logs
+
+Note: helm uninstall keeps the database PVC (data-{{ include "task-tracker.dbName" . }}-0).

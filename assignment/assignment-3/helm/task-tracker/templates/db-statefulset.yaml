@@ -1,0 +1,72 @@
+{{- /*
+db-statefulset.yaml - PostgreSQL as a StatefulSet (Assignment 2).
+replicas is fixed at 1: the image has no replication logic.
+*/}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "task-tracker.dbName" . }}
+  labels:
+    {{- include "task-tracker.labels" (dict "ctx" . "component" "database") | nindent 4 }}
+spec:
+  serviceName: {{ include "task-tracker.dbName" . }}
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  selector:
+    matchLabels:
+      {{- include "task-tracker.selectorLabels" (dict "ctx" . "component" "database") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "task-tracker.labels" (dict "ctx" . "component" "database") | nindent 8 }}
+      annotations:
+        {{- include "task-tracker.configChecksums" . | nindent 8 }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      containers:
+        - name: db
+          image: {{ include "task-tracker.image" (dict "ctx" . "img" .Values.images.database) | quote }}
+          imagePullPolicy: {{ .Values.images.pullPolicy }}
+          ports:
+            - name: postgres
+              containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: {{ include "task-tracker.configName" . }}
+            - secretRef:
+                name: {{ include "task-tracker.secretName" . }}
+          # Generous timings: Postgres runs under arm64 emulation.
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 5
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+  # PVCs created from this template are owned by the StatefulSet controller,
+  # NOT by Helm: `helm uninstall` leaves them (and the data) behind.
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: {{ .Values.database.storage.storageClassName }}
+        resources:
+          requests:
+            storage: {{ .Values.database.storage.size }}
+  persistentVolumeClaimRetentionPolicy:
+    whenDeleted: Retain
+    whenScaled: Retain

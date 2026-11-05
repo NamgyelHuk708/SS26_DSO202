@@ -1,0 +1,25 @@
+# environments/prod.yaml - overrides for the production release.
+environment: prod
+ingress:
+  host: helm-prod.tasks.local
+backend:
+  replicaCount: 2
+  corsOrigin: http://helm-prod.tasks.local:30080
+  resources:
+    requests: { cpu: 200m, memory: 256Mi }
+    limits:   { cpu: 500m, memory: 512Mi }
+frontend:
+  replicaCount: 2
+database:
+  storage:
+    size: 2Gi       # fixed at first install: volumeClaimTemplates are immutable
+# Workload totals: requests cpu 600m / mem 768Mi, limits cpu 1900m / mem 1792Mi,
+# plus headroom for a rolling-update surge Pod and the helm test Pod.
+quota:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    pods: "15"
+    persistentvolumeclaims: "2"

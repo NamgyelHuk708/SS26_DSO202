@@ -1,0 +1,4 @@
+# Real credentials and packaged charts never go into Git.
+environments/secrets-*.yaml
+!environments/secrets-*.yaml.example
+*.tgz

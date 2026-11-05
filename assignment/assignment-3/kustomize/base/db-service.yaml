@@ -1,0 +1,17 @@
+# Headless Service for the StatefulSet: DNS resolves straight to db-0's IP.
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-svc
+  labels:
+    app: database
+    tier: database
+spec:
+  clusterIP: None
+  selector:
+    app: database
+    tier: database
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: postgres

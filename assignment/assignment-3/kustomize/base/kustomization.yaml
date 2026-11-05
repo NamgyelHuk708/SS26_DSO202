@@ -1,0 +1,41 @@
+# Base: everything the Task Tracker needs that is the SAME in every environment.
+# Source: Assignment 2 (StatefulSet database + Ingress), with namespaces removed
+# so each overlay can place the app in its own namespace.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# ---- Compose -------------------------------------------------------------
+resources:
+  - db-statefulset.yaml
+  - db-service.yaml
+  - backend-deployment.yaml
+  - backend-service.yaml
+  - frontend-deployment.yaml
+  - frontend-service.yaml
+  - ingress.yaml
+  - rbac.yaml
+  - quota.yaml
+
+# ---- Transform -----------------------------------------------------------
+# Added to every object and Pod template, but NOT to selectors:
+# Deployment/StatefulSet selectors are immutable (A2: "spec.selector: Field is
+# immutable"), and Service selectors decide routing.
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: task-tracker
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
+    includeTemplates: true
+
+# ---- Generate ------------------------------------------------------------
+# Non-secret settings come from an env-style file. Kustomize appends a content
+# hash to the name and rewrites every reference, so a config change rolls the
+# Pods that use it.
+configMapGenerator:
+  - name: app-config
+    envs:
+      - config.env
+
+# The Secret is NOT generated here: each overlay generates its own app-secret
+# from a gitignored db-secret.env, so dev and prod never share credentials and
+# no password is committed (A1/A2 committed one in plain text).
